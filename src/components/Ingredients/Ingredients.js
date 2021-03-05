@@ -4,7 +4,7 @@ import IngredientForm from "./IngredientForm";
 import Search from "./Search";
 import ErrorModal from "../UI/ErrorModal";
 
-const reducer = (state, action) => {
+const ingedientReducer = (state, action) => {
   switch (action.type) {
     case "SET":
       return action.ing;
@@ -18,13 +18,13 @@ const reducer = (state, action) => {
 };
 
 const Ingredients = () => {
-  const [ingredients, dispatch] = useReducer(reducer, []);
+  const [ingredients, ingDispatch] = useReducer(ingedientReducer, []);
 
   const [isLoading, setLoading] = useState(false);
   const [isError, setError] = useState();
 
   const filteredIng = useCallback((filtIng) => {
-    dispatch({ type: "SET", ing: filtIng });
+    ingDispatch({ type: "SET", ing: filtIng });
   }, []);
 
   const addIngredientHandler = (ingredient) => {
@@ -37,7 +37,7 @@ const Ingredients = () => {
       .then((res) => res.json())
       .then((resData) => {
         setLoading(false);
-        dispatch({ type: "ADD", ing: { ...ingredient, id: resData.name } });
+        ingDispatch({ type: "ADD", ing: { ...ingredient, id: resData.name } });
       })
       .catch((err) => {
         setError(err.message);
@@ -53,7 +53,7 @@ const Ingredients = () => {
       }
     )
       .then(() => {
-        dispatch({ type: "DELETE", id: id });
+        ingDispatch({ type: "DELETE", id: id });
         setLoading(false);
       })
       .catch((err) => {
