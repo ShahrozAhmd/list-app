@@ -4,7 +4,7 @@ import IngredientForm from "./IngredientForm";
 import Search from "./Search";
 import ErrorModal from "../UI/ErrorModal";
 
-const ingedientReducer = (state, action) => {
+const ingredientReducer = (state, action) => {
   switch (action.type) {
     case "SET":
       return action.ing;
@@ -17,18 +17,34 @@ const ingedientReducer = (state, action) => {
   }
 };
 
-const Ingredients = () => {
-  const [ingredients, ingDispatch] = useReducer(ingedientReducer, []);
+const requestReducer = (state, action) => {
+  switch (action.type) {
+    case "REQUEST":
+      return { isLoading: true, isError: null };
+    case "RESPONSE":
+      return { isLoading: false, isError: null };
+    case "ERROR":
+      return { isLoading: false, isError: action.error };
+    case "CLEAR_ERROR":
+      return { isLoading: null, isError: null };
+    default:
+      throw new Error("Error");
+  }
+};
 
-  const [isLoading, setLoading] = useState(false);
-  const [isError, setError] = useState();
+const Ingredients = () => {
+  const [ingredients, ingDispatch] = useReducer(ingredientReducer, []);
+  const [state, reqDispatch] = useReducer(requestReducer, {
+    isLoading: null,
+    isError: null,
+  });
 
   const filteredIng = useCallback((filtIng) => {
     ingDispatch({ type: "SET", ing: filtIng });
   }, []);
 
   const addIngredientHandler = (ingredient) => {
-    setLoading(true);
+    reqDispatch({ type: "REQUEST" });
     fetch("https://list-app-f6945-default-rtdb.firebaseio.com/lists.json", {
       method: "POST",
       body: JSON.stringify(ingredient),
@@ -36,16 +52,17 @@ const Ingredients = () => {
     })
       .then((res) => res.json())
       .then((resData) => {
-        setLoading(false);
+        reqDispatch({ type: "RESPONSE" });
+
         ingDispatch({ type: "ADD", ing: { ...ingredient, id: resData.name } });
       })
       .catch((err) => {
-        setError(err.message);
+        reqDispatch({ type: "ERROR", error: err.message });
       });
   };
 
   const removeIngredientHandler = (id) => {
-    setLoading(true);
+    reqDispatch({ type: "REQUEST" });
     fetch(
       `https://list-app-f6945-default-rtdb.firebaseio.com/lists/${id}.json`,
       {
@@ -54,24 +71,25 @@ const Ingredients = () => {
     )
       .then(() => {
         ingDispatch({ type: "DELETE", id: id });
-        setLoading(false);
+        reqDispatch({ type: "RESPONSE" });
       })
       .catch((err) => {
-        setError(err.message);
+        reqDispatch({ type: "ERROR", error: err.message });
       });
   };
 
   const closeErrorModal = () => {
-    setError(false);
-    setLoading(false);
+    reqDispatch({ type: "CLEAR_ERROR" });
   };
 
   return (
     <div className="App">
-      {isError && <ErrorModal onClose={closeErrorModal}>{isError}</ErrorModal>}
+      {state.isError && (
+        <ErrorModal onClose={closeErrorModal}>{state.isError}</ErrorModal>
+      )}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        isloading={isLoading}
+        isloading={state.isLoading}
       />
 
       <section>
